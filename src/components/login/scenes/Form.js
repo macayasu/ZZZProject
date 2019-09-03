@@ -11,19 +11,22 @@ import {
   Keyboard
 } from 'react-native';
 
-import { Button, Spinner } from 'native-base';
+import { connect } from 'react-redux';;
+import LoginActions from '../actions/Login';
+import Loader from '../components/Loader';
+import { Button, Spinner, Form } from 'native-base';
 import {Actions, ActionConst} from 'react-native-router-flux';
-import usernameImg from '../../images/username.png';
-import passwordImg from '../../images/password.png';
-import eyeImg from '../../images/eye_black.png';
-import config from '../../../config.json';
+import usernameImg from '../../../images/username.png';
+import passwordImg from '../../../images/password.png';
+import eyeImg from '../../../images/eye_black.png';
+import config from '../../../../config.json';
 
-export default class Forms extends Component {
+class Forms extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      username: '',
-      password: '',
+      username: null,
+      password: null,
       showPass: true,
       press: false,
       isLoading: false
@@ -31,6 +34,15 @@ export default class Forms extends Component {
     };
     this.showPass = this.showPass.bind(this);
     this._onPress = this._onPress.bind(this);
+  }
+
+  doLogin(){
+    Keyboard.dismiss();
+    if (this.state.isLoading) return;
+    this.setState({isLoading: true});
+  
+    let { username, password } = this.state;
+    this.props.login(username, password);
   }
 
   showPass() {
@@ -78,11 +90,11 @@ export default class Forms extends Component {
         }).done();
   }
 
-
-
   render() {
+    let { hasError, isLogged, isLoading } = this.props;
     return (
       <KeyboardAvoidingView behavior="position" style={styles.container}>
+        <Loader loading={isLoading} />
         <Image style={styles.inlineImgUsername} source={usernameImg} />
         <TextInput
           style={styles.TextInput}
@@ -111,20 +123,38 @@ export default class Forms extends Component {
           <Image source={eyeImg} style={styles.iconEye} />
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={this._onPress}>
+        <TouchableOpacity onPress={()=>{this.doLogin()}}>
             <Button style={styles.ButtonLogin} rounded>
             {this.state.isLoading ? (
               <Spinner color='white' />
             ) : (
-              <Text style={styles.TextButton} onPress={this._onPress}>Login</Text>
+              <Text style={styles.TextButton} onPress={()=>{this.doLogin()}}>Login</Text>
             )}
             </Button>
         </TouchableOpacity>
+        <Text style={{marginTop: 20}}>{hasError ? "Error" : ""}</Text>
+        <Text style={{marginTop: 20}}>{isLogged ? "ONLINE" : "OFFLINE"}</Text>
       </KeyboardAvoidingView>
      
     );
   }
 }
+
+const mapStateToProps = (state) => {
+  return {
+      isLogged: state.login.isLogged,
+      hasError : state.login.hasError,
+      isLoading: state.login.isLoading,
+  };
+};
+
+const mapDispatchToProps = (dispatch) => {
+  return {
+      login: (username, password) => dispatch(LoginActions.login(username, password))
+  };
+};
+
+export default connect(mapStateToProps, mapDispatchToProps)(Forms);
 
 
 const styles = StyleSheet.create({
